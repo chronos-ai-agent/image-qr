@@ -6,13 +6,15 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, image } = await request.json();
+    const { url, image, imageUrl, imageDescription } = await request.json();
 
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    if (!image) {
+    // Accept either image, imageUrl, or imageDescription
+    const imageRef = image || imageUrl || imageDescription;
+    if (!imageRef) {
       return NextResponse.json({ error: "Image is required" }, { status: 400 });
     }
 
@@ -34,16 +36,19 @@ export async function POST(request: NextRequest) {
     const openai = new OpenAI({ apiKey });
 
     // Use DALL-E 3 to create an artistic QR code
-    const prompt = `Create an artistic QR code image that:
-1. Is a beautiful, artistic rendition that incorporates visual patterns from natural imagery
-2. Has a clear QR code pattern visible with high contrast between modules
-3. The QR code must encode the URL: ${url}
-4. Make it scannable by maintaining clear position markers (the three corner squares)
-5. Keep the QR modules (squares) clearly defined with good contrast
-6. Make it visually stunning while maintaining scannability
-7. Use vibrant colors and artistic effects while keeping the QR code functional
+    const styleDesc = typeof imageRef === 'string' && imageRef.startsWith('http') 
+      ? 'inspired by a beautiful artistic image'
+      : imageRef || 'artistic and visually stunning';
+    
+    const prompt = `Create an artistic image with an embedded QR code that:
+1. Has the visual style of: ${styleDesc}
+2. Contains a clearly visible, scannable QR code seamlessly integrated into the design
+3. The QR code encodes: ${url}
+4. Maintains clear position markers (three corner squares) for scannability
+5. Uses creative artistic interpretation while keeping the QR code functional
+6. The overall image should be beautiful and shareable
 
-Important: The QR code must be functional and scannable. Maintain the standard QR code structure with clear finder patterns in three corners.`;
+Important: The QR code must be functional and scannable. Keep the finder patterns clear.`;
 
     const response = await openai.images.generate({
       model: "dall-e-3",
