@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const GALLERY_IMAGES = [
   { id: 1, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Abstract Flow", category: "abstract" },
@@ -39,6 +46,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [aiModel, setAiModel] = useState<"gpt-image" | "gemini">("gpt-image");
 
   // Check user status on load
   useEffect(() => {
@@ -107,6 +115,7 @@ export default function Home() {
           imageDescription: selectedImage?.name || uploadedImageName || "artistic image",
           imageUrl: selectedImage?.src || uploadedImage,
           sessionId,
+          model: aiModel,
         }),
       });
 
@@ -259,6 +268,22 @@ export default function Home() {
                   onChange={(e) => setUrl(e.target.value)}
                   className="text-lg h-12"
                 />
+                
+                {/* AI Model Selector */}
+                <div className="mt-4">
+                  <Label className="text-sm font-medium mb-2 block text-muted-foreground">
+                    AI Model
+                  </Label>
+                  <Select value={aiModel} onValueChange={(v: "gpt-image" | "gemini") => setAiModel(v)}>
+                    <SelectTrigger className="w-full md:w-[250px]">
+                      <SelectValue placeholder="Select AI model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gpt-image">GPT Image 1 (OpenAI)</SelectItem>
+                      <SelectItem value="gemini">Nano Banana (Gemini)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
 
