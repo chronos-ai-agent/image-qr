@@ -15,14 +15,37 @@ import {
 } from "@/components/ui/dialog";
 
 const GALLERY_IMAGES = [
-  { id: 1, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Abstract Flow", category: "abstract" },
-  { id: 2, src: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=400&fit=crop", name: "Neon Waves", category: "abstract" },
-  { id: 3, src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop", name: "Mountain Dawn", category: "nature" },
-  { id: 4, src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop", name: "Misty Forest", category: "nature" },
-  { id: 5, src: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop", name: "Marble Texture", category: "patterns" },
-  { id: 6, src: "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=400&fit=crop", name: "Gradient Dream", category: "patterns" },
-  { id: 7, src: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=400&fit=crop", name: "Color Burst", category: "abstract" },
-  { id: 8, src: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", name: "Ocean Calm", category: "nature" },
+  // Calm / Zen
+  { id: 1, src: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", name: "Ocean Calm", category: "calm" },
+  { id: 2, src: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&fit=crop", name: "Serene Beach", category: "calm" },
+  { id: 3, src: "https://images.unsplash.com/photo-1505144808419-1957a94ca61e?w=400&h=400&fit=crop", name: "Gentle Shores", category: "calm" },
+  { id: 4, src: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&h=400&fit=crop", name: "Zen Meditation", category: "calm" },
+  { id: 5, src: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=400&h=400&fit=crop", name: "Sunset Reflection", category: "calm" },
+  { id: 6, src: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=400&fit=crop", name: "Still Waters", category: "calm" },
+  
+  // Gradients
+  { id: 7, src: "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=400&h=400&fit=crop", name: "Purple Dream", category: "gradient" },
+  { id: 8, src: "https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=400&h=400&fit=crop", name: "Soft Blush", category: "gradient" },
+  { id: 9, src: "https://images.unsplash.com/photo-1557682260-96773eb01377?w=400&h=400&fit=crop", name: "Pastel Flow", category: "gradient" },
+  { id: 10, src: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=400&h=400&fit=crop", name: "Warm Glow", category: "gradient" },
+  { id: 11, src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop", name: "Aurora Soft", category: "gradient" },
+  
+  // Minimal
+  { id: 12, src: "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=400&fit=crop", name: "Soft Clouds", category: "minimal" },
+  { id: 13, src: "https://images.unsplash.com/photo-1553356084-58ef4a67b2a7?w=400&h=400&fit=crop", name: "Pink Abstract", category: "minimal" },
+  { id: 14, src: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", name: "Clean Lines", category: "minimal" },
+  { id: 15, src: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop", name: "Marble Flow", category: "minimal" },
+  
+  // Nature (calm, soft light)
+  { id: 16, src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop", name: "Misty Valley", category: "nature" },
+  { id: 17, src: "https://images.unsplash.com/photo-1489549132488-d00b7eee80f1?w=400&h=400&fit=crop", name: "Foggy Peaks", category: "nature" },
+  { id: 18, src: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&h=400&fit=crop", name: "Forest Canopy", category: "nature" },
+  { id: 19, src: "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=400&h=400&fit=crop", name: "Golden Hour", category: "nature" },
+  
+  // Abstract (mix of calm and vibrant)
+  { id: 20, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Fluid Art", category: "abstract" },
+  { id: 21, src: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=400&fit=crop", name: "Color Burst", category: "abstract" },
+  { id: 22, src: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=400&fit=crop", name: "Neon Waves", category: "abstract" },
 ];
 
 export default function Home() {
@@ -272,14 +295,16 @@ export default function Home() {
 
                   <TabsContent value="gallery">
                     <Tabs defaultValue="all" className="w-full">
-                      <TabsList className="mb-4">
+                      <TabsList className="mb-4 flex-wrap h-auto gap-1">
                         <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="abstract">Abstract</TabsTrigger>
+                        <TabsTrigger value="calm">Calm</TabsTrigger>
+                        <TabsTrigger value="gradient">Gradient</TabsTrigger>
+                        <TabsTrigger value="minimal">Minimal</TabsTrigger>
                         <TabsTrigger value="nature">Nature</TabsTrigger>
-                        <TabsTrigger value="patterns">Patterns</TabsTrigger>
+                        <TabsTrigger value="abstract">Abstract</TabsTrigger>
                       </TabsList>
 
-                      {["all", "abstract", "nature", "patterns"].map((category) => (
+                      {["all", "calm", "gradient", "minimal", "nature", "abstract"].map((category) => (
                         <TabsContent key={category} value={category}>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {GALLERY_IMAGES.filter(
