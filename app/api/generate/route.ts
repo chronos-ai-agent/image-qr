@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
+import { fal } from "@fal-ai/client";
 import QRCode from "qrcode";
 
 export const maxDuration = 60;
@@ -159,6 +160,65 @@ Requirements:
   throw new Error("No image in OpenAI response");
 }
 
+async function generateWithFal(
+  url: string,
+  imageUrl: string | undefined,
+  imageDescription: string | undefined,
+  qrDataUrl: string
+) {
+  const apiKey = process.env.FAL_KEY;
+  if (!apiKey) throw new Error("fal.ai API key not configured");
+
+  // Configure fal client
+  fal.config({ credentials: apiKey });
+
+  const styleHint = imageDescription || "artistic and visually stunning";
+  
+  const prompt = `Create a beautiful artistic image with an embedded, scannable QR code.
+Style: ${styleHint}
+The QR code must encode: ${url}
+Requirements:
+- The QR code must be FULLY SCANNABLE with clear finder patterns (3 corner squares)
+- Integrate the QR code seamlessly into an artistic design
+- Make it visually stunning while keeping the QR functional
+- High contrast between QR modules for scannability`;
+
+  // Build input for fal.ai nano-banana
+  const input: any = {
+    prompt: prompt,
+    image_size: "square_hd",
+  };
+
+  // Add reference images if available
+  const imageUrls: string[] = [];
+  if (imageUrl && imageUrl.startsWith("http")) {
+    imageUrls.push(imageUrl);
+  }
+  // Note: QR code is a data URL, fal.ai needs http URLs for image_urls
+  // We'll include the QR pattern in the prompt instead
+
+  if (imageUrls.length > 0) {
+    input.image_urls = imageUrls;
+  }
+
+  // Use nano-banana-pro for best quality (with reasoning)
+  const result = await fal.subscribe("fal-ai/nano-banana-pro", {
+    input,
+    logs: true,
+  });
+
+  const data = result.data as any;
+  
+  if (data?.images?.[0]?.url) {
+    return data.images[0].url;
+  }
+  if (data?.image?.url) {
+    return data.image.url;
+  }
+
+  throw new Error("No image in fal.ai response");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { url, imageUrl, imageDescription, model = "gpt-image" } = await request.json();
@@ -178,6 +238,8 @@ export async function POST(request: NextRequest) {
 
     if (model === "gemini") {
       resultUrl = await generateWithGemini(url, imageUrl, imageDescription, qrDataUrl);
+    } else if (model === "fal") {
+      resultUrl = await generateWithFal(url, imageUrl, imageDescription, qrDataUrl);
     } else {
       resultUrl = await generateWithGPTImage(url, imageUrl, imageDescription, qrDataUrl);
     }

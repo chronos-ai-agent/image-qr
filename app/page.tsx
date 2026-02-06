@@ -46,7 +46,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [aiModel, setAiModel] = useState<"gpt-image" | "gemini">("gpt-image");
+  const [aiModel, setAiModel] = useState<"gpt-image" | "gemini" | "fal">("gpt-image");
 
   // Check user status on load
   useEffect(() => {
@@ -274,13 +274,14 @@ export default function Home() {
                   <Label className="text-sm font-medium mb-2 block text-muted-foreground">
                     AI Model
                   </Label>
-                  <Select value={aiModel} onValueChange={(v: "gpt-image" | "gemini") => setAiModel(v)}>
+                  <Select value={aiModel} onValueChange={(v: "gpt-image" | "gemini" | "fal") => setAiModel(v)}>
                     <SelectTrigger className="w-full md:w-[250px]">
                       <SelectValue placeholder="Select AI model" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="gpt-image">GPT Image 1 (OpenAI)</SelectItem>
-                      <SelectItem value="gemini">Nano Banana (Gemini)</SelectItem>
+                      <SelectItem value="gemini">Gemini 2.0 Flash (Google)</SelectItem>
+                      <SelectItem value="fal">Nano Banana Pro (fal.ai)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
