@@ -17,12 +17,9 @@ async function generateWithGemini(
 
   const genAI = new GoogleGenerativeAI(apiKey);
   
-  // Use gemini-2.0-flash for image generation (the -exp model was deprecated)
+  // Use gemini-2.5-flash-image for image generation (nano-banana)
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    generationConfig: {
-      responseModalities: ["Text", "Image"],
-    } as any,
+    model: "gemini-2.5-flash-image",
   });
 
   const parts: any[] = [];
