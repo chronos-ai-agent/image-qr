@@ -16,9 +16,12 @@ async function generateWithGemini(
 
   const genAI = new GoogleGenerativeAI(apiKey);
   
-  // Use gemini-2.0-flash-exp-image-generation for image output
+  // Use gemini-2.0-flash for image generation (the -exp model was deprecated)
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-exp-image-generation",
+    model: "gemini-2.0-flash",
+    generationConfig: {
+      responseModalities: ["Text", "Image"],
+    } as any,
   });
 
   const parts: any[] = [];
@@ -44,19 +47,11 @@ async function generateWithGemini(
   parts.push({
     text: `Create an artistic image that contains a scannable QR code for: ${url}
 Style: ${styleHint}
-The QR code must be fully functional with clear finder patterns. Integrate it beautifully into the design.
-Generate the image.`,
+The QR code must be fully functional with clear finder patterns. Integrate it beautifully into the design.`,
   });
 
-  const response = await model.generateContent({
-    contents: [{ role: "user", parts }],
-    generationConfig: {
-      responseModalities: ["IMAGE", "TEXT"],
-    } as any,
-  });
-
-  const result = response.response;
-  for (const part of result.candidates?.[0]?.content?.parts || []) {
+  const response = await model.generateContent(parts);
+  for (const part of response.response.candidates?.[0]?.content?.parts || []) {
     if ((part as any).inlineData) {
       const data = (part as any).inlineData.data;
       const mime = (part as any).inlineData.mimeType || "image/png";
@@ -79,33 +74,86 @@ async function generateWithGPTImage(
 
   const styleHint = imageDescription || "artistic and visually stunning";
   
-  // Build the prompt - include reference to the style
-  let prompt = `Create a beautiful artistic image with an embedded, fully scannable QR code.
-The QR code must encode this URL: ${url}
-Style inspiration: ${styleHint}
-
+  // Build the prompt
+  const prompt = `Create a beautiful artistic image with an embedded, scannable QR code.
+Style: ${styleHint}
+The QR code must encode: ${url}
 Requirements:
-- The QR code MUST be fully scannable with clear finder patterns (the 3 corner squares)
+- The QR code must be FULLY SCANNABLE with clear finder patterns (3 corner squares)
 - Integrate the QR code seamlessly into an artistic design
 - Make it visually stunning while keeping the QR functional
-- High contrast between QR modules for scannability
-- The QR pattern should be clearly visible`;
+- High contrast between QR modules for scannability`;
 
-  // Use images.generate endpoint with gpt-image-1
-  const response = await openai.images.generate({
+  // Check if we have reference images to include
+  const hasReferenceImages = (imageUrl && imageUrl.startsWith("http")) || qrDataUrl;
+
+  if (hasReferenceImages) {
+    // Use Responses API with image_generation tool for image inputs
+    // Content types must be input_text and input_image (NOT text/image_url)
+    const content: any[] = [
+      { type: "input_text", text: prompt },
+    ];
+
+    // Add reference image if available
+    if (imageUrl && imageUrl.startsWith("http")) {
+      try {
+        const imgResponse = await fetch(imageUrl);
+        const imgBuffer = await imgResponse.arrayBuffer();
+        const base64 = Buffer.from(imgBuffer).toString("base64");
+        const mimeType = imgResponse.headers.get("content-type") || "image/jpeg";
+        content.push({
+          type: "input_image",
+          image_url: `data:${mimeType};base64,${base64}`,
+        });
+      } catch (e) {
+        console.error("Failed to fetch reference image:", e);
+      }
+    }
+
+    // Add QR code as reference
+    content.push({
+      type: "input_image", 
+      image_url: qrDataUrl,
+    });
+
+    try {
+      const response = await openai.responses.create({
+        model: "gpt-4.1", // Use mainline model that supports image_generation tool
+        input: [
+          {
+            role: "user",
+            content: content,
+          },
+        ],
+        tools: [{ type: "image_generation", quality: "high" } as any],
+      });
+
+      // Extract generated image from response
+      for (const output of response.output || []) {
+        if (output.type === "image_generation_call" && (output as any).result) {
+          return `data:image/png;base64,${(output as any).result}`;
+        }
+      }
+    } catch (responsesError: any) {
+      console.error("Responses API error:", responsesError.message);
+      // Fall through to Images API
+    }
+  }
+
+  // Fallback: use Images API (no reference images, just prompt)
+  const imgResponse = await openai.images.generate({
     model: "gpt-image-1",
     prompt: prompt,
     n: 1,
     size: "1024x1024",
-    quality: "high",
-    output_format: "b64_json",
-  } as any);
+    response_format: "b64_json",
+  });
 
-  if (response.data?.[0]?.b64_json) {
-    return `data:image/png;base64,${response.data[0].b64_json}`;
+  if (imgResponse.data?.[0]?.b64_json) {
+    return `data:image/png;base64,${imgResponse.data[0].b64_json}`;
   }
-  if (response.data?.[0]?.url) {
-    return response.data[0].url;
+  if (imgResponse.data?.[0]?.url) {
+    return imgResponse.data[0].url;
   }
 
   throw new Error("No image in OpenAI response");
