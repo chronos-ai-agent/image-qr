@@ -1,6 +1,4 @@
-import { neon, neonConfig } from "@neondatabase/serverless";
-
-neonConfig.fetchConnectionCache = true;
+import { neon } from "@neondatabase/serverless";
 
 export function getDb() {
   const databaseUrl = process.env.DATABASE_URL;

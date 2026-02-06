@@ -79,17 +79,17 @@ describe('API Code Quality Checks', () => {
     }
   });
 
-  it('should use valid OpenAI image model names', async () => {
+  it('should use fal.ai for image generation', async () => {
     const fs = await import('fs');
     const code = fs.readFileSync('./app/api/generate/route.ts', 'utf-8');
     
-    // Should use gpt-image-1 or similar valid models
-    const hasValidModel = 
-      code.includes('gpt-image-1') || 
-      code.includes('gpt-image-1.5') ||
-      code.includes('dall-e-3');
+    // Should use fal.ai client and models
+    const hasFalAI = 
+      code.includes('@fal-ai/client') || 
+      code.includes('fal.subscribe') ||
+      code.includes('fal-ai/illusion-diffusion');
     
-    expect(hasValidModel).toBe(true);
+    expect(hasFalAI).toBe(true);
   });
 
   it('should NOT use invalid Responses API content types', async () => {
@@ -108,9 +108,9 @@ describe('API Code Quality Checks', () => {
     const fs = await import('fs');
     const code = fs.readFileSync('./app/api/generate/route.ts', 'utf-8');
     
-    // Should import and use qrcode library
+    // Should import and use qrcode library with toBuffer (for sharp processing)
     expect(code).toContain('qrcode');
-    expect(code).toContain('toDataURL');
+    expect(code).toContain('toBuffer');
   });
 
   it('should return proper error format', async () => {
@@ -148,13 +148,13 @@ describe('Model Configuration Validation', () => {
     }
   });
 
-  it('OpenAI model should be valid for image generation', async () => {
+  it('fal.ai models should be valid for QR generation', async () => {
     const fs = await import('fs');
     const code = fs.readFileSync('./app/api/generate/route.ts', 'utf-8');
     
-    // Should use a valid image model
-    const validImageModels = ['gpt-image-1', 'gpt-image-1.5', 'dall-e-3', 'dall-e-2', 'gpt-4.1'];
-    const hasValidModel = validImageModels.some(m => code.includes(m));
+    // Should use valid fal.ai models for QR generation
+    const validFalModels = ['fal-ai/illusion-diffusion', 'fal-ai/qr-code', 'fal-ai/nano-banana'];
+    const hasValidModel = validFalModels.some(m => code.includes(m));
     
     expect(hasValidModel).toBe(true);
   });

@@ -15,6 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const GALLERY_IMAGES = [
   { id: 1, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Abstract Flow", category: "abstract" },
@@ -27,6 +34,31 @@ const GALLERY_IMAGES = [
   { id: 8, src: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", name: "Ocean Calm", category: "nature" },
 ];
 
+const QR_STYLES = [
+  { id: "controlnet-blend", name: "ControlNet Blend ✨", description: "QR becomes part of the image texture - best integration", badge: "NEW" },
+  { id: "controlnet-artistic", name: "AI ControlNet", description: "AI-generated artistic QR - best quality & scannability", badge: "RECOMMENDED" },
+  { id: "glass", name: "Frosted Glass", description: "QR on frosted glass overlay - 100% scannable" },
+  { id: "dots", name: "Artistic Dots", description: "QR with circular dot pattern" },
+  { id: "rounded", name: "Rounded Squares", description: "QR with rounded corners" },
+  { id: "qrbtf-bubble", name: "Bubble", description: "Playful circles with organic feel", badge: "QRBTF" },
+  { id: "qrbtf-25d", name: "3D Isometric", description: "Colorful 3D cube effect", badge: "QRBTF" },
+  { id: "qrbtf-dsj", name: "Designer", description: "Artistic with X patterns and colors", badge: "QRBTF" },
+  { id: "ai-artistic", name: "AI Artistic (Beta)", description: "AI-generated artistic QR - may vary in scannability" },
+];
+
+// Progress phases with targets and status messages
+const PROGRESS_PHASES = [
+  { target: 20, status: "Preparing...", duration: 1500 },
+  { target: 50, status: "Generating QR pattern...", duration: 3000 },
+  { target: 75, status: "Applying AI enhancement...", duration: 4000 },
+  { target: 90, status: "Finalizing...", duration: 2000 },
+];
+
+// Easing function for smooth progress
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [selectedImage, setSelectedImage] = useState<typeof GALLERY_IMAGES[0] | null>(null);
@@ -34,6 +66,7 @@ export default function Home() {
   const [uploadedImageName, setUploadedImageName] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [progressStatus, setProgressStatus] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generatedUrl, setGeneratedUrl] = useState<string>("");
   const [generationId, setGenerationId] = useState<number | null>(null);
@@ -45,6 +78,7 @@ export default function Home() {
   const [isPublic, setIsPublic] = useState(false);
   const [savedQRId, setSavedQRId] = useState<number | null>(null);
   const [savingPublic, setSavingPublic] = useState(false);
+  const [qrStyle, setQrStyle] = useState("controlnet-blend");
 
   // Check user status on load
   useEffect(() => {
@@ -95,13 +129,39 @@ export default function Home() {
 
     setGenerating(true);
     setProgress(0);
+    setProgressStatus("Initializing...");
     setIsPublic(false);
     setSavedQRId(null);
 
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setProgress((p) => Math.min(p + Math.random() * 15, 90));
-    }, 500);
+    // Smooth phased progress animation
+    let currentProgress = 0;
+    let phaseIndex = 0;
+    let phaseStartTime = Date.now();
+    let phaseStartProgress = 0;
+    
+    const animateProgress = () => {
+      if (phaseIndex >= PROGRESS_PHASES.length) return;
+      
+      const phase = PROGRESS_PHASES[phaseIndex];
+      const elapsed = Date.now() - phaseStartTime;
+      const phaseProgress = Math.min(elapsed / phase.duration, 1);
+      const easedProgress = easeOutCubic(phaseProgress);
+      
+      const progressRange = phase.target - phaseStartProgress;
+      currentProgress = phaseStartProgress + (progressRange * easedProgress);
+      
+      setProgress(currentProgress);
+      setProgressStatus(phase.status);
+      
+      // Move to next phase when current one completes
+      if (phaseProgress >= 1 && phaseIndex < PROGRESS_PHASES.length - 1) {
+        phaseIndex++;
+        phaseStartTime = Date.now();
+        phaseStartProgress = currentProgress;
+      }
+    };
+    
+    const progressInterval = setInterval(animateProgress, 50);
 
     try {
       const sessionId = localStorage.getItem("session_id") || crypto.randomUUID();
@@ -115,6 +175,7 @@ export default function Home() {
           imageDescription: selectedImage?.name || uploadedImageName || "artistic image",
           imageUrl: selectedImage?.src || uploadedImage,
           sessionId,
+          style: qrStyle,
         }),
       });
 
@@ -124,17 +185,39 @@ export default function Home() {
         throw new Error(data.error);
       }
 
-      setProgress(100);
-      setGeneratedImage(data.imageUrl);
-      setGeneratedUrl(url);
-      setGenerationId(data.generationId);
+      // Smooth completion animation
+      clearInterval(progressInterval);
+      setProgressStatus("Complete!");
+      
+      // Animate from current to 100%
+      const finalStart = currentProgress;
+      const finalStartTime = Date.now();
+      const finalDuration = 300;
+      
+      const completeAnimation = setInterval(() => {
+        const elapsed = Date.now() - finalStartTime;
+        const t = Math.min(elapsed / finalDuration, 1);
+        const eased = easeOutCubic(t);
+        setProgress(finalStart + (100 - finalStart) * eased);
+        
+        if (t >= 1) {
+          clearInterval(completeAnimation);
+          setGeneratedImage(data.imageUrl);
+          setGeneratedUrl(url);
+          setGenerationId(data.generationId);
+          setGenerating(false);
+          setProgress(0);
+          setProgressStatus("");
+        }
+      }, 16);
+      
     } catch (error) {
       console.error("Generation failed:", error);
       alert("Generation failed. Please try again.");
-    } finally {
       clearInterval(progressInterval);
       setGenerating(false);
       setProgress(0);
+      setProgressStatus("");
     }
   };
 
@@ -337,6 +420,37 @@ export default function Home() {
               </CardContent>
             </Card>
 
+            {/* Style Selection */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <Label className="text-lg font-medium mb-3 block">
+                  QR Code Style
+                </Label>
+                <Select value={qrStyle} onValueChange={setQrStyle}>
+                  <SelectTrigger className="w-full h-12">
+                    <SelectValue placeholder="Select a style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QR_STYLES.map((style) => (
+                      <SelectItem key={style.id} value={style.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium flex items-center gap-2">
+                            {style.name}
+                            {"badge" in style && style.badge && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-semibold">
+                                {style.badge}
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{style.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
             {/* Image Selection */}
             <Card className="mb-8">
               <CardContent className="p-6">
@@ -448,39 +562,58 @@ export default function Home() {
 
             {/* Generate Button */}
             <div className="text-center">
-              <Button
-                size="lg"
-                className="text-lg px-12 h-14"
-                disabled={!url || !currentImage || generating}
-                onClick={handleGenerate}
-              >
-                {generating ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      viewBox="0 0 24 24"
+              {generating ? (
+                <div className="flex flex-col items-center gap-4 w-full max-w-md">
+                  {/* Progress bar container */}
+                  <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-100 ease-out relative"
+                      style={{ width: `${progress}%` }}
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Generating... {Math.round(progress)}%
-                  </span>
-                ) : (
-                  "Generate QR Code"
-                )}
-              </Button>
+                      {/* Shimmer effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  {/* Status text and percentage */}
+                  <div className="flex items-center justify-between w-full text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      {progressStatus}
+                    </span>
+                    <span className="font-mono font-semibold text-primary">
+                      {Math.round(progress)}%
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  size="lg"
+                  className="text-lg px-12 h-14"
+                  disabled={!url || !currentImage}
+                  onClick={handleGenerate}
+                >
+                  Generate QR Code
+                </Button>
+              )}
             </div>
           </>
         )}

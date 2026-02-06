@@ -56,6 +56,7 @@ export default function ExplorePage() {
   // Initial load
   useEffect(() => {
     fetchQRCodes(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Infinite scroll with Intersection Observer
@@ -89,6 +90,7 @@ export default function ExplorePage() {
     if (page > 1) {
       fetchQRCodes(page);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const formatDate = (dateString: string) => {
