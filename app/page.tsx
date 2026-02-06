@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Navigation } from "@/components/navigation";
 import {
   Dialog,
   DialogContent,
@@ -15,37 +17,14 @@ import {
 } from "@/components/ui/dialog";
 
 const GALLERY_IMAGES = [
-  // Calm / Zen
-  { id: 1, src: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", name: "Ocean Calm", category: "calm" },
-  { id: 2, src: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&fit=crop", name: "Serene Beach", category: "calm" },
-  { id: 3, src: "https://images.unsplash.com/photo-1505144808419-1957a94ca61e?w=400&h=400&fit=crop", name: "Gentle Shores", category: "calm" },
-  { id: 4, src: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&h=400&fit=crop", name: "Zen Meditation", category: "calm" },
-  { id: 5, src: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=400&h=400&fit=crop", name: "Sunset Reflection", category: "calm" },
-  { id: 6, src: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=400&fit=crop", name: "Still Waters", category: "calm" },
-  
-  // Gradients
-  { id: 7, src: "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=400&h=400&fit=crop", name: "Purple Dream", category: "gradient" },
-  { id: 8, src: "https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=400&h=400&fit=crop", name: "Soft Blush", category: "gradient" },
-  { id: 9, src: "https://images.unsplash.com/photo-1557682260-96773eb01377?w=400&h=400&fit=crop", name: "Pastel Flow", category: "gradient" },
-  { id: 10, src: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=400&h=400&fit=crop", name: "Warm Glow", category: "gradient" },
-  { id: 11, src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop", name: "Aurora Soft", category: "gradient" },
-  
-  // Minimal
-  { id: 12, src: "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=400&h=400&fit=crop", name: "Soft Clouds", category: "minimal" },
-  { id: 13, src: "https://images.unsplash.com/photo-1553356084-58ef4a67b2a7?w=400&h=400&fit=crop", name: "Pink Abstract", category: "minimal" },
-  { id: 14, src: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop", name: "Clean Lines", category: "minimal" },
-  { id: 15, src: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop", name: "Marble Flow", category: "minimal" },
-  
-  // Nature (calm, soft light)
-  { id: 16, src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop", name: "Misty Valley", category: "nature" },
-  { id: 17, src: "https://images.unsplash.com/photo-1489549132488-d00b7eee80f1?w=400&h=400&fit=crop", name: "Foggy Peaks", category: "nature" },
-  { id: 18, src: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&h=400&fit=crop", name: "Forest Canopy", category: "nature" },
-  { id: 19, src: "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=400&h=400&fit=crop", name: "Golden Hour", category: "nature" },
-  
-  // Abstract (mix of calm and vibrant)
-  { id: 20, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Fluid Art", category: "abstract" },
-  { id: 21, src: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=400&fit=crop", name: "Color Burst", category: "abstract" },
-  { id: 22, src: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=400&fit=crop", name: "Neon Waves", category: "abstract" },
+  { id: 1, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Abstract Flow", category: "abstract" },
+  { id: 2, src: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=400&fit=crop", name: "Neon Waves", category: "abstract" },
+  { id: 3, src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop", name: "Mountain Dawn", category: "nature" },
+  { id: 4, src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop", name: "Misty Forest", category: "nature" },
+  { id: 5, src: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop", name: "Marble Texture", category: "patterns" },
+  { id: 6, src: "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=400&fit=crop", name: "Gradient Dream", category: "patterns" },
+  { id: 7, src: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=400&fit=crop", name: "Color Burst", category: "abstract" },
+  { id: 8, src: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", name: "Ocean Calm", category: "nature" },
 ];
 
 export default function Home() {
@@ -56,12 +35,16 @@ export default function Home() {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedUrl, setGeneratedUrl] = useState<string>("");
   const [generationId, setGenerationId] = useState<number | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [email, setEmail] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [savedQRId, setSavedQRId] = useState<number | null>(null);
+  const [savingPublic, setSavingPublic] = useState(false);
 
   // Check user status on load
   useEffect(() => {
@@ -112,6 +95,8 @@ export default function Home() {
 
     setGenerating(true);
     setProgress(0);
+    setIsPublic(false);
+    setSavedQRId(null);
 
     // Simulate progress
     const progressInterval = setInterval(() => {
@@ -141,6 +126,7 @@ export default function Home() {
 
       setProgress(100);
       setGeneratedImage(data.imageUrl);
+      setGeneratedUrl(url);
       setGenerationId(data.generationId);
     } catch (error) {
       console.error("Generation failed:", error);
@@ -149,6 +135,52 @@ export default function Home() {
       clearInterval(progressInterval);
       setGenerating(false);
       setProgress(0);
+    }
+  };
+
+  const handlePublicToggle = async (checked: boolean) => {
+    if (!generatedImage) return;
+    
+    setSavingPublic(true);
+    
+    try {
+      if (savedQRId) {
+        // Update existing QR code visibility
+        const response = await fetch(`/api/qr/${savedQRId}/visibility`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPublic: checked }),
+        });
+        
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        
+        setIsPublic(checked);
+      } else if (checked) {
+        // Save new QR code as public
+        const response = await fetch("/api/qr/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: generatedUrl,
+            imageUrl: generatedImage,
+            description: selectedImage?.name || uploadedImageName || "Artistic QR Code",
+            isPublic: true,
+          }),
+        });
+        
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        
+        setSavedQRId(data.qrCode.id);
+        setIsPublic(true);
+      }
+    } catch (error) {
+      console.error("Failed to update public status:", error);
+      // Revert the toggle on error
+      setIsPublic(!checked);
+    } finally {
+      setSavingPublic(false);
     }
   };
 
@@ -221,7 +253,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <div className="container mx-auto px-4 py-16 max-w-5xl">
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
         {/* Hero */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -247,6 +281,23 @@ export default function Home() {
                     <p className="text-white text-sm">Scan to test!</p>
                   </div>
                 </div>
+                
+                {/* Make Public Toggle */}
+                <div className="flex items-center gap-3 bg-secondary/50 px-4 py-3 rounded-lg">
+                  <Switch
+                    id="public-toggle"
+                    checked={isPublic}
+                    onCheckedChange={handlePublicToggle}
+                    disabled={savingPublic}
+                  />
+                  <Label htmlFor="public-toggle" className="text-sm cursor-pointer">
+                    {savingPublic ? "Saving..." : "Share to public gallery"}
+                  </Label>
+                  {isPublic && (
+                    <span className="text-xs text-green-500 ml-2">✓ Shared</span>
+                  )}
+                </div>
+                
                 <div className="flex gap-4">
                   <Button size="lg" onClick={handleDownload}>
                     Download
@@ -257,6 +308,8 @@ export default function Home() {
                     onClick={() => {
                       setGeneratedImage(null);
                       setGenerationId(null);
+                      setIsPublic(false);
+                      setSavedQRId(null);
                     }}
                   >
                     Create Another
@@ -295,16 +348,14 @@ export default function Home() {
 
                   <TabsContent value="gallery">
                     <Tabs defaultValue="all" className="w-full">
-                      <TabsList className="mb-4 flex-wrap h-auto gap-1">
+                      <TabsList className="mb-4">
                         <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="calm">Calm</TabsTrigger>
-                        <TabsTrigger value="gradient">Gradient</TabsTrigger>
-                        <TabsTrigger value="minimal">Minimal</TabsTrigger>
-                        <TabsTrigger value="nature">Nature</TabsTrigger>
                         <TabsTrigger value="abstract">Abstract</TabsTrigger>
+                        <TabsTrigger value="nature">Nature</TabsTrigger>
+                        <TabsTrigger value="patterns">Patterns</TabsTrigger>
                       </TabsList>
 
-                      {["all", "calm", "gradient", "minimal", "nature", "abstract"].map((category) => (
+                      {["all", "abstract", "nature", "patterns"].map((category) => (
                         <TabsContent key={category} value={category}>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {GALLERY_IMAGES.filter(
