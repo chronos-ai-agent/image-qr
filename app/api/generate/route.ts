@@ -15,11 +15,10 @@ async function generateWithGemini(
   if (!apiKey) throw new Error("Gemini API key not configured");
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Use gemini-2.0-flash-exp-image-generation for image output
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-exp",
-    generationConfig: {
-      responseModalities: ["Text", "Image"],
-    } as any,
+    model: "gemini-2.0-flash-exp-image-generation",
   });
 
   const parts: any[] = [];
@@ -45,11 +44,19 @@ async function generateWithGemini(
   parts.push({
     text: `Create an artistic image that contains a scannable QR code for: ${url}
 Style: ${styleHint}
-The QR code must be fully functional with clear finder patterns. Integrate it beautifully into the design.`,
+The QR code must be fully functional with clear finder patterns. Integrate it beautifully into the design.
+Generate the image.`,
   });
 
-  const response = await model.generateContent(parts);
-  for (const part of response.response.candidates?.[0]?.content?.parts || []) {
+  const response = await model.generateContent({
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      responseModalities: ["IMAGE", "TEXT"],
+    } as any,
+  });
+
+  const result = response.response;
+  for (const part of result.candidates?.[0]?.content?.parts || []) {
     if ((part as any).inlineData) {
       const data = (part as any).inlineData.data;
       const mime = (part as any).inlineData.mimeType || "image/png";
@@ -72,66 +79,33 @@ async function generateWithGPTImage(
 
   const styleHint = imageDescription || "artistic and visually stunning";
   
-  // Build the prompt
-  const prompt = `Create a beautiful artistic image with an embedded, scannable QR code.
-Style: ${styleHint}
-The QR code must encode: ${url}
+  // Build the prompt - include reference to the style
+  let prompt = `Create a beautiful artistic image with an embedded, fully scannable QR code.
+The QR code must encode this URL: ${url}
+Style inspiration: ${styleHint}
+
 Requirements:
-- The QR code must be FULLY SCANNABLE with clear finder patterns (3 corner squares)
+- The QR code MUST be fully scannable with clear finder patterns (the 3 corner squares)
 - Integrate the QR code seamlessly into an artistic design
 - Make it visually stunning while keeping the QR functional
-- High contrast between QR modules for scannability`;
+- High contrast between QR modules for scannability
+- The QR pattern should be clearly visible`;
 
-  // gpt-image-1 with image input
-  const messages: any[] = [
-    {
-      role: "user",
-      content: [
-        { type: "text", text: prompt },
-      ],
-    },
-  ];
-
-  // Add reference image if available
-  if (imageUrl && imageUrl.startsWith("http")) {
-    messages[0].content.push({
-      type: "image_url",
-      image_url: { url: imageUrl },
-    });
-  }
-
-  // Add QR code as reference
-  messages[0].content.push({
-    type: "image_url", 
-    image_url: { url: qrDataUrl },
-  });
-
-  const response = await openai.responses.create({
-    model: "gpt-image-1",
-    input: messages,
-    tools: [{ type: "image_generation" }],
-  });
-
-  // Extract generated image
-  for (const output of response.output || []) {
-    if (output.type === "image_generation_call" && output.result) {
-      return `data:image/png;base64,${output.result}`;
-    }
-  }
-
-  // Fallback: try images.generate
-  const imgResponse = await openai.images.generate({
+  // Use images.generate endpoint with gpt-image-1
+  const response = await openai.images.generate({
     model: "gpt-image-1",
     prompt: prompt,
     n: 1,
     size: "1024x1024",
-  });
+    quality: "high",
+    output_format: "b64_json",
+  } as any);
 
-  if (imgResponse.data?.[0]?.b64_json) {
-    return `data:image/png;base64,${imgResponse.data[0].b64_json}`;
+  if (response.data?.[0]?.b64_json) {
+    return `data:image/png;base64,${response.data[0].b64_json}`;
   }
-  if (imgResponse.data?.[0]?.url) {
-    return imgResponse.data[0].url;
+  if (response.data?.[0]?.url) {
+    return response.data[0].url;
   }
 
   throw new Error("No image in OpenAI response");
