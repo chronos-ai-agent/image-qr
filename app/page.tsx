@@ -13,13 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const GALLERY_IMAGES = [
   { id: 1, src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop", name: "Abstract Flow", category: "abstract" },
@@ -41,12 +34,12 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generationId, setGenerationId] = useState<number | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [email, setEmail] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [aiModel, setAiModel] = useState<"gpt-image" | "gemini" | "fal">("gpt-image");
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [pendingGeneration, setPendingGeneration] = useState(false);
 
   // Check user status on load
   useEffect(() => {
@@ -91,10 +84,24 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerateClick = () => {
     if (!url) return;
     if (!selectedImage && !uploadedImage) return;
 
+    // If user is pro, generate directly
+    if (isPro) {
+      doGenerate();
+    } else {
+      // Show purchase modal first
+      setShowPurchaseModal(true);
+    }
+  };
+
+  const doGenerate = async () => {
+    if (!url) return;
+    if (!selectedImage && !uploadedImage) return;
+
+    setShowPurchaseModal(false);
     setGenerating(true);
     setProgress(0);
 
@@ -115,7 +122,6 @@ export default function Home() {
           imageDescription: selectedImage?.name || uploadedImageName || "artistic image",
           imageUrl: selectedImage?.src || uploadedImage,
           sessionId,
-          model: aiModel,
         }),
       });
 
@@ -139,37 +145,32 @@ export default function Home() {
   };
 
   const handleDownload = () => {
-    if (isPro) {
-      // Direct download for pro users
-      downloadImage(false);
-    } else {
-      setShowPaymentModal(true);
-    }
-  };
-
-  const downloadImage = async (withWatermark: boolean) => {
     if (!generatedImage) return;
     
     const link = document.createElement("a");
-    link.href = withWatermark ? `${generatedImage}?watermark=true` : generatedImage;
+    link.href = generatedImage;
     link.download = `qr-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    if (!withWatermark) {
-      setShowPaymentModal(false);
-    }
   };
 
   const handleSinglePurchase = async () => {
-    const sessionId = localStorage.getItem("session_id");
+    const sessionId = localStorage.getItem("session_id") || crypto.randomUUID();
+    localStorage.setItem("session_id", sessionId);
+    
+    // Store pending generation info for after payment
+    localStorage.setItem("pending_generation", JSON.stringify({
+      url,
+      imageDescription: selectedImage?.name || uploadedImageName || "artistic image",
+      imageUrl: selectedImage?.src || uploadedImage,
+    }));
+    
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "single",
-        generationId,
         sessionId,
       }),
     });
@@ -180,14 +181,23 @@ export default function Home() {
   };
 
   const handleLifetimePurchase = () => {
-    setShowPaymentModal(false);
+    setShowPurchaseModal(false);
     setShowEmailModal(true);
   };
 
   const handleEmailSubmit = async () => {
     if (!email) return;
     
-    const sessionId = localStorage.getItem("session_id");
+    const sessionId = localStorage.getItem("session_id") || crypto.randomUUID();
+    localStorage.setItem("session_id", sessionId);
+    
+    // Store pending generation info for after payment
+    localStorage.setItem("pending_generation", JSON.stringify({
+      url,
+      imageDescription: selectedImage?.name || uploadedImageName || "artistic image",
+      imageUrl: selectedImage?.src || uploadedImage,
+    }));
+    
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -195,7 +205,6 @@ export default function Home() {
         type: "lifetime",
         email,
         sessionId,
-        generationId,
       }),
     });
     const data = await response.json();
@@ -268,23 +277,6 @@ export default function Home() {
                   onChange={(e) => setUrl(e.target.value)}
                   className="text-lg h-12"
                 />
-                
-                {/* AI Model Selector */}
-                <div className="mt-4">
-                  <Label className="text-sm font-medium mb-2 block text-muted-foreground">
-                    AI Model
-                  </Label>
-                  <Select value={aiModel} onValueChange={(v: "gpt-image" | "gemini" | "fal") => setAiModel(v)}>
-                    <SelectTrigger className="w-full md:w-[250px]">
-                      <SelectValue placeholder="Select AI model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gpt-image">GPT Image 1 (OpenAI)</SelectItem>
-                      <SelectItem value="gemini">Gemini 2.0 Flash (Google)</SelectItem>
-                      <SelectItem value="fal">Nano Banana Pro (fal.ai)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </CardContent>
             </Card>
 
@@ -403,7 +395,7 @@ export default function Home() {
                 size="lg"
                 className="text-lg px-12 h-14"
                 disabled={!url || !currentImage || generating}
-                onClick={handleGenerate}
+                onClick={handleGenerateClick}
               >
                 {generating ? (
                   <span className="flex items-center gap-2">
@@ -432,17 +424,22 @@ export default function Home() {
                   "Generate QR Code"
                 )}
               </Button>
+              {!isPro && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  $3 per QR code or $10 for unlimited forever
+                </p>
+              )}
             </div>
           </>
         )}
 
-        {/* Payment Modal */}
-        <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        {/* Purchase Modal - shown before generation */}
+        <Dialog open={showPurchaseModal} onOpenChange={setShowPurchaseModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Your QR is ready!</DialogTitle>
+              <DialogTitle>Generate Your QR Code</DialogTitle>
               <DialogDescription>
-                Choose your download option
+                Choose a plan to create your artistic QR code
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -452,9 +449,9 @@ export default function Home() {
               >
                 <CardContent className="p-4 flex justify-between items-center">
                   <div>
-                    <p className="font-semibold">Single Download</p>
+                    <p className="font-semibold">Single QR Code</p>
                     <p className="text-sm text-muted-foreground">
-                      This image only, no watermark
+                      Generate one artistic QR code
                     </p>
                   </div>
                   <p className="text-2xl font-bold">$3</p>
@@ -469,7 +466,7 @@ export default function Home() {
                   <div>
                     <p className="font-semibold">Unlimited Forever</p>
                     <p className="text-sm text-muted-foreground">
-                      Download all QR codes, forever
+                      Generate unlimited QR codes, forever
                     </p>
                   </div>
                   <div className="text-right">
@@ -478,15 +475,6 @@ export default function Home() {
                   </div>
                 </CardContent>
               </Card>
-
-              <div className="text-center pt-2">
-                <button
-                  onClick={() => downloadImage(true)}
-                  className="text-sm text-muted-foreground hover:text-foreground underline"
-                >
-                  Download with watermark (free)
-                </button>
-              </div>
             </div>
           </DialogContent>
         </Dialog>
